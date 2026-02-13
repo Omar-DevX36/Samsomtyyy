@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Surprise For You</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #ff4d6d;
+            --bg: #0b090a;
+            --box-color: #e63946;
+            --ribbon-color: #ffd700;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #2a0a12 0%, #000000 100%);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        /* --- Gift Box --- */
+        .gift-container {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .gift-container:hover {
+            transform: scale(1.05);
+        }
+
+        .gift-box {
+            position: relative;
+            width: 200px;
+            height: 150px;
+            background: var(--box-color);
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* Ribbon Vertical */
+        .gift-box::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 100%;
+            background: var(--ribbon-color);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .lid {
+            position: absolute;
+            width: 220px;
+            height: 50px;
+            background: var(--box-color);
+            top: -50px;
+            left: -10px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 11;
+            transition: transform 1s ease-in-out, opacity 1s;
+            transform-origin: bottom center;
+        }
+
+        /* Ribbon Horizontal on Lid */
+        .lid::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 100%;
+            background: var(--ribbon-color);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Bow */
+        .bow {
+            position: absolute;
+            top: -65px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 40px;
+            z-index: 12;
+            transition: opacity 1s;
+        }
+
+        .bow::before, .bow::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            background: var(--ribbon-color);
+            border-radius: 50% 50% 0 0;
+        }
+        
+        .bow::before { left: 0; transform: skew(10deg); }
+        .bow::after { right: 0; transform: skew(-10deg); }
+
+        .click-hint {
+            margin-top: 50px;
+            opacity: 0.8;
+            font-size: 1.2rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* --- Story Mode Container --- */
+        .story-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(42,10,18,0.95) 0%, rgba(0,0,0,0.95) 100%);
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            width: 100%;
+            padding: 0 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 101;
+            box-sizing: border-box;
+        }
+
+        .progress-segment {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: white;
+            transition: width 0.1s linear;
+        }
+
+        .story-slide {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Allow clicks to pass through to container */
+             /* Glass Effect for Slide Content */
+             backdrop-filter: blur(10px);
+        }
+
+        .story-slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        .story-slide.prev {
+            transform: translateX(-100%) scale(0.8);
+            opacity: 0;
+        }
+        
+        .story-slide.next {
+            transform: translateX(100%) scale(0.8);
+            opacity: 0;
+        }
+
+        /* --- Content Styles --- */
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent);
+            margin-bottom: 20px;
+            font-size: 3rem;
+            opacity: 0; 
+            transform: translateY(20px);
+        }
+        
+        .slide-animate h1 {
+            animation: slideUpFade 0.8s 0.3s forwards;
+        }
+
+        .message-box {
+            text-align: left;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 600px;
+            background: rgba(255,255,255,0.05); /* Very subtle card */
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-height: 60vh;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .slide-animate .message-box {
+            animation: slideUpFade 0.8s 0.6s forwards;
+        }
+
+        .video-wrapper {
+            width: 100%;
+            max-width: 350px; /* Bigger video for focus */
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        
+        .slide-animate .video-wrapper {
+            animation: popIn 0.8s 0.3s forwards;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        .tap-hint {
+            position: absolute;
+            bottom: 30px;
+            padding-bottom: 1rem;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            animation: pulse 2s infinite;
+        }
+
+        /* --- Animations --- */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes openLid {
+            0% { transform: rotateX(0); }
+            100% { transform: rotateX(-120deg) translateY(-20px); opacity: 0; }
+        }
+        
+        @keyframes popIn {
+             0% { transform: scale(0.5); opacity: 0; }
+             70% { transform: scale(1.05); opacity: 1; }
+             100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes slideUpFade {
+             from { transform: translateY(30px); opacity: 0; }
+             to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOutBox {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.5); opacity: 0; pointer-events: none; }
+        }
+        
+        /* --- Floating Hearts --- */
+        .heart {
+            position: absolute;
+            color: var(--accent);
+            animation: floatUp 5s linear forwards;
+            pointer-events: none;
+            top: 100vh;
+            z-index: 50;
+        }
+
+        @keyframes floatUp {
+            to { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Gift Box -->
+    <div class="gift-container" id="giftBox" onclick="openGift()">
+        <div class="lid"></div>
+        <div class="bow"></div>
+        <div class="gift-box"></div>
+        <div class="click-hint">Tap to Open ❤️</div>
+    </div>
+
+    <!-- Story Container -->
+    <div class="story-container" id="storyContainer" onclick="nextSlide()">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-segment"><div class="progress-fill" id="prog1"></div></div>
+            <div class="progress-segment"><div class="progress-fill" id="prog2"></div></div>
+        </div>
+
+        <!-- Slide 1: Love Message -->
+        <div class="story-slide active" id="slide1">
+            <h1>For My Forever Love</h1>
+            <div class="message-box" id="typewriter"></div>
+            <div class="tap-hint">Tap to see more...</div>
+        </div>
+
+        <!-- Slide 2: Video -->
+        <div class="story-slide next" id="slide2">
+            <h1>Our Favorite Memory</h1>
+            <div class="video-wrapper">
+                <video controls playsinline id="memoryVideo">
+                    <source src="mem.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="tap-hint">Tap to replay or enjoy the music</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const typewriterText = `My Dearest Love,
+
+From the moment we met, my life changed forever. You came into my world like a warm breeze, bringing the peace and joy I had always searched for.
+
+Every day, I find new reasons to love you. I love how your eyes shine when you talk about what you love, and how your laughter fills the room.
+
+You are my best friend and my greatest support. When I am weak, you are my strength. When I am lost, you guide me. When I am happy, it is because of you.
+
+I cherish our memories—our late-night talks, our silly jokes, and our quiet moments holding hands. Each memory is a treasure.
+
+I promise to be there for you, through good times and bad. 
+
+You are the melody to my song and the beat of my heart. You are my everything.
+
+Thank you for choosing me and loving me. I love you more than words can say.
+
+With all my love, yours forever.`;
+
+        let currentSlide = 0;
+        const totalSlides = 2;
+        let isTyping = false;
+
+        // --- Logic ---
+        function openGift() {
+            const box = document.getElementById('giftBox');
+            const story = document.getElementById('storyContainer');
+
+            // 1. Animate Box Opening
+            const lid = box.querySelector('.lid');
+            const bow = box.querySelector('.bow');
+            
+            lid.style.animation = "openLid 1s forwards";
+            bow.style.opacity = "0";
+            
+            // 2. Hide Box & Show Story Mode
+            setTimeout(() => {
+                box.style.animation = "fadeOutBox 0.8s forwards";
+                
+                setTimeout(() => {
+                    box.style.display = 'none';
+                    story.style.display = 'flex';
+                    // Trigger reflow
+                    void story.offsetWidth; 
+                    
+                    // Activate Slide 1
+                    currentSlide = 1; // Initialize first slide
+                    const s1 = document.getElementById('slide1');
+                    s1.classList.add('active'); // Make visible
+                    s1.classList.add('slide-animate'); // Trigger animations
+
+                    startTypewriter();
+                    
+                    // Start Hearts
+                    setInterval(createHeart, 300);
+                    
+                    // Start progress bar for Slide 1
+                    document.getElementById('prog1').style.width = '100%';
+                    
+                }, 600);
+            }, 800);
+        }
+
+        function nextSlide() {
+            if (currentSlide >= totalSlides) return; // End of story
+            if (isTyping) {
+                 // Fast forward typing? Or just ignore? 
+                 // Let's ignore to prevent breaking logic, or complete instantly.
+                 // Ideally complete instantly.
+                 return; 
+            }
+
+            currentSlide++;
+            
+            // Slide Transitions
+            const prevSlide = document.getElementById('slide' + (currentSlide-1));     // Previous slide
+            const nextSlide = document.getElementById('slide' + currentSlide);     // New current slide
+
+            if(prevSlide) {
+                prevSlide.classList.remove('active');
+                prevSlide.classList.add('prev');
+            }
+            
+            if(nextSlide) {
+                nextSlide.classList.remove('next');
+                nextSlide.classList.add('active');
+                nextSlide.classList.add('slide-animate'); // Trigger entrance animations
+                
+                // Play video if it's the video slide
+                const video = nextSlide.querySelector('video');
+                if(video) {
+                    video.play().catch(e => console.error("Video auto-play failed", e));
+                    video.muted = false; 
+                }
+            }
+
+            // Update Progress Bar
+            const prog = document.getElementById('prog' + currentSlide);
+            if(prog) prog.style.width = '100%';
+        }
+
+        // --- Typewriter Effect ---
+        function startTypewriter() {
+            const element = document.getElementById('typewriter');
+            let i = 0;
+            element.innerHTML = "";
+            isTyping = true;
+            
+            function type() {
+                if (i < typewriterText.length) {
+                    const char = typewriterText.charAt(i);
+                    element.innerHTML += (char === '\\n') ? '<br>' : char;
+                    i++;
+                    // Auto-scroll logic 
+                    const container = document.querySelector('.message-box');
+                    if(container) container.scrollTop = container.scrollHeight;
+                    
+                    setTimeout(type, 1); // Faster typing
+                } else {
+                    isTyping = false;
+                }
+            }
+            type();
+        }
+
+        // --- Heart Animation ---
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
+            heart.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 6000);
+        }
+    </script>
+</body>
+</html>
